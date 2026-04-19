@@ -564,15 +564,47 @@ INSERT INTO clientes (nombre, apellido, telefono) VALUES
 ('Juan',  'Perez', '900111001'),
 ('Maria', 'Lopez', '900111002');
 
-
+-- AGREGADO MAS CONTENIDO Y CONSULTAS JOIN
+-- CORREGIDO MAS VENTAS
 INSERT INTO ventas (id_cliente, id_empleado, fecha) VALUES
-(1, 1, '2026-01-01');
+(1, 1, '2026-01-01'),
+(2, 2, '2026-01-03'),
+(1, 3, '2026-01-04'),
+(2, 1, '2026-01-05'),
+(1, 2, '2026-01-06'),
+(2, 3, '2026-01-07');
 
+-- MAS DETALLE DE VENTA
 INSERT INTO detalle_venta (id_venta, id_producto, cantidad, precio_unitario) VALUES
-(1, 1, 2, 18.50);
+(1, 1, 2, 18.50),
+-- Venta 2
+(2, 2, 3, 8.90),
+(2, 15, 2, 1.50),
 
+-- Venta 3
+(3, 26, 1, 4.50),
+(3, 30, 2, 3.20),
+
+-- Venta 4
+(4, 50, 1, 4.50),
+(4, 60, 4, 3.90),
+
+-- Venta 5
+(5, 80, 2, 6.90),
+(5, 90, 1, 5.90),
+
+-- Venta 6
+(6, 100, 3, 1.20),
+(6, 120, 2, 2.80);
+
+-- INSERTE MAS PAGOS
 INSERT INTO pagos (id_venta, id_metodo, monto) VALUES
-(1, 1, 37.00);
+(1, 1, 37.00),
+(2, 1, 29.70),
+(3, 2, 10.90),
+(4, 1, 20.10),
+(5, 3, 19.70),
+(6, 2, 9.20);
 
 INSERT INTO compras (id_proveedor, id_empleado, fecha) VALUES
 (1, 2, '2026-01-02');
@@ -580,27 +612,68 @@ INSERT INTO compras (id_proveedor, id_empleado, fecha) VALUES
 INSERT INTO detalle_compra (id_compra, id_producto, cantidad, costo_unitario) VALUES
 (1, 1, 50, 15.00);
 
-
-
 INSERT INTO producto_sucursal (id_producto, id_sucursal, stock)
 SELECT id_producto, 1, 50 FROM productos LIMIT 10;
 
+SELECT 'categorias' AS tabla, COUNT(*) AS registros FROM categorias
+UNION ALL
+SELECT 'productos', COUNT(*) FROM productos
+UNION ALL
+SELECT 'inventario', COUNT(*) FROM inventario
+UNION ALL
+SELECT 'empleados', COUNT(*) FROM empleados
+UNION ALL
+SELECT 'usuarios', COUNT(*) FROM usuarios
+UNION ALL
+SELECT 'clientes', COUNT(*) FROM clientes
+UNION ALL
+SELECT 'ventas', COUNT(*) FROM ventas
+UNION ALL
+SELECT 'compras', COUNT(*) FROM compras;
 
 
-SELECT 'categorias'     AS tabla, COUNT(*) AS registros FROM categorias
-UNION ALL
-SELECT 'productos',       COUNT(*) FROM productos
-UNION ALL
-SELECT 'inventario',      COUNT(*) FROM inventario
-UNION ALL
-SELECT 'empleados',       COUNT(*) FROM empleados
-UNION ALL
-SELECT 'usuarios',        COUNT(*) FROM usuarios
-UNION ALL
-SELECT 'clientes',        COUNT(*) FROM clientes
-UNION ALL
-SELECT 'ventas',          COUNT(*) FROM ventas
-UNION ALL
-SELECT 'compras',         COUNT(*) FROM compras;
+--Lista productos con su categoría--
+SELECT 
+    p.id_producto,
+    p.descripcion_producto,
+    p.precio,
+    c.nombre AS categoria
+FROM productos p
+INNER JOIN categorias c 
+    ON p.id_categoria = c.id_categoria;
 
+-- Detalle de ventas con cliente, empleado y producto
+SELECT 
+    v.id_venta,
+    v.fecha,
+    cl.nombre || ' ' || cl.apellido AS cliente,
+    e.nombre || ' ' || e.apellido AS empleado,
+    p.descripcion_producto,
+    dv.cantidad,
+    dv.precio_unitario,
+    (dv.cantidad * dv.precio_unitario) AS subtotal
+FROM ventas v
+INNER JOIN clientes cl 
+    ON v.id_cliente = cl.id_cliente
+INNER JOIN empleados e 
+    ON v.id_empleado = e.id_empleado
+INNER JOIN detalle_venta dv 
+    ON dv.id_venta = v.id_venta
+INNER JOIN productos p 
+    ON dv.id_producto = p.id_producto;
 
+--Total vendido por producto y categoría
+SELECT 
+    p.descripcion_producto,
+    c.nombre AS categoria,
+    SUM(dv.cantidad) AS total_vendido,
+    SUM(dv.cantidad * dv.precio_unitario) AS ingreso_total
+FROM detalle_venta dv
+INNER JOIN productos p 
+    ON dv.id_producto = p.id_producto
+INNER JOIN categorias c 
+    ON p.id_categoria = c.id_categoria
+GROUP BY 
+    p.descripcion_producto, 
+    c.nombre
+ORDER BY ingreso_total DESC;
